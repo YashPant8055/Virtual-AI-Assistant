@@ -106,8 +106,8 @@ export const signUp = async (req, res) => {
     res.cookie("token", token, {
       httpOnly: true,
       maxAge: 15 * 24 * 60 * 60 * 1000,
-      sameSite: "strict",
-      secure: false, // keep as-is for localhost
+      sameSite: "None",
+      secure: true, // keep as-is for localhost
     });
 
     // ✅ Do NOT return password
@@ -142,8 +142,8 @@ export const login = async (req, res) => {
     res.cookie("token", token, {
       httpOnly: true,
       maxAge: 15 * 24 * 60 * 60 * 1000,
-      sameSite: "strict",
-      secure: false, // keep as-is for localhost
+      sameSite: "None",
+      secure: true, // keep as-is for localhost
     });
 
     // ✅ Do NOT return password
