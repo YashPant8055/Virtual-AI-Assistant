@@ -7,7 +7,7 @@ import authRouter from "./Routes/auth.routes.js";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import userRouter from "./Routes/user.routes.js";
-import geminiResponse from "./gemini.js";
+import { startTelegramBot } from "./telegramBot.js";
 
 const app = express();
 app.use(
@@ -24,5 +24,6 @@ app.use("/api/user", userRouter);
 
 app.listen(port, () => {
   connectDb();
+  startTelegramBot();
   console.log("Server started");
 });

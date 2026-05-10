@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useContext, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { IoMdArrowRoundBack } from "react-icons/io";
 import Cards from "../components/Cards";
@@ -10,14 +10,9 @@ import image5 from "../assets/image5.png";
 import image6 from "../assets/image6.jpeg";
 import image7 from "../assets/image7.jpeg";
 import { RiImageAddLine } from "react-icons/ri";
-import { useContext } from "react";
-import { userDataContext } from "../context/userContext";
+import { userDataContext } from "../context/userDataContext";
 function Customize() {
   const {
-    serverUrl,
-    userData,
-    setUserData,
-    backendImage,
     setBackendImage,
     frontendImage,
     setFrontendImage,
@@ -51,7 +46,7 @@ function Customize() {
         <Cards image={image7} />
         <div
           className={`w-[70px] h-[140px] lg:w-[150px] lg:h-[250px] bg-[#020220] border-2 border-[#0000ff66] rounded-2xl overflow-hidden hover:shadow-2xl hover:shadow-blue-950 cursor-pointer hover:border-4 hover:border-white flex items-center justify-center ${
-            selectedImage == "input"
+            selectedImage === "input"
               ? "border-4 border-white shadow-2xl shadow-blue-950 "
               : null
           }`}
@@ -64,7 +59,11 @@ function Customize() {
             <RiImageAddLine className="text-white w-[25px] h-[25px]" />
           )}
           {frontendImage && (
-            <img src={frontendImage} className="h-full object-cover" />
+            <img
+              src={frontendImage}
+              alt="Selected assistant"
+              className="h-full object-cover"
+            />
           )}
         </div>
         <input

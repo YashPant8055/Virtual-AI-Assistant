@@ -1,7 +1,9 @@
 import axios from "axios";
-import React, { createContext, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
+import { AVAILABLE_MODELS } from "./modelOptions";
+import { userDataContext as UserDataContext } from "./userDataContext";
 
-export const userDataContext = createContext(null);
+const MODEL_STORAGE_KEY = "virtual-ai-selected-model";
 
 function UserContext({ children }) {
   const serverUrl = "http://localhost:8000";
@@ -9,6 +11,9 @@ function UserContext({ children }) {
   const [frontendImage, setFrontendImage] = useState(null);
   const [backendImage, setBackendImage] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
+  const [selectedModel, setSelectedModel] = useState(() => {
+    return localStorage.getItem(MODEL_STORAGE_KEY) || "openrouter/free";
+  });
 
   const handleCurrentUser = async () => {
     try {
@@ -16,26 +21,86 @@ function UserContext({ children }) {
         withCredentials: true,
       });
       setUserData(result.data);
-      console.log("Current user:", result.data);
-    } catch (error) {
-      console.log("Error fetching current user:", error);
+    } catch {
+      setUserData(null);
     }
   };
 
-  const getGeminiResponse = async (command) => {
+  const getGeminiResponse = async (
+    command,
+    mode = "voice",
+    conversationId = null,
+    model = null
+  ) => {
+    const result = await axios.post(
+      `${serverUrl}/api/user/ask`,
+      { command, mode, conversationId, model: model || selectedModel },
+      { withCredentials: true }
+    );
+    return result.data;
+  };
+
+  const changeModel = useCallback(async (modelId) => {
+    setSelectedModel(modelId);
+    localStorage.setItem(MODEL_STORAGE_KEY, modelId);
     try {
-      const result = await axios.post(
-        `${serverUrl}/api/user/ask`, // ✅ correct route
-        { command },
+      await axios.post(
+        `${serverUrl}/api/user/model`,
+        { model: modelId },
         { withCredentials: true }
       );
-      console.log("Assistant response:", result.data);
-      return result.data;
-    } catch (error) {
-      console.log("Error from /api/user/ask:", error);
-      throw error;
+    } catch {
+      // silently fail
     }
+  }, [serverUrl]);
+
+  const createTelegramConnectSession = async () => {
+    const result = await axios.post(
+      `${serverUrl}/api/user/telegram/connect`,
+      {},
+      { withCredentials: true }
+    );
+    return result.data;
   };
+
+  const disconnectTelegram = async () => {
+    const result = await axios.post(
+      `${serverUrl}/api/user/telegram/disconnect`,
+      {},
+      { withCredentials: true }
+    );
+    return result.data;
+  };
+
+  const renameConversation = async (mode, conversationId, title) => {
+    const result = await axios.post(
+      `${serverUrl}/api/user/conversation/rename`,
+      { mode, conversationId, title },
+      { withCredentials: true }
+    );
+    return result.data;
+  };
+
+  const deleteConversation = async (mode, conversationId) => {
+    const result = await axios.post(
+      `${serverUrl}/api/user/conversation/delete`,
+      { mode, conversationId },
+      { withCredentials: true }
+    );
+    return result.data;
+  };
+
+  const setAssistantState = useCallback(async (enabled) => {
+    try {
+      await axios.post(
+        `${serverUrl}/api/user/assistant-state`,
+        { enabled },
+        { withCredentials: true }
+      );
+    } catch {
+      // silently fail
+    }
+  }, [serverUrl]);
 
   useEffect(() => {
     handleCurrentUser();
@@ -51,13 +116,20 @@ function UserContext({ children }) {
     setFrontendImage,
     selectedImage,
     setSelectedImage,
+    selectedModel,
+    changeModel,
     getGeminiResponse,
+    createTelegramConnectSession,
+    disconnectTelegram,
+    renameConversation,
+    deleteConversation,
+    setAssistantState,
   };
 
   return (
-    <userDataContext.Provider value={value}>
+    <UserDataContext.Provider value={value}>
       {children}
-    </userDataContext.Provider>
+    </UserDataContext.Provider>
   );
 }
 

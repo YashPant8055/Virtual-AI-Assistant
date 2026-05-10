@@ -1,0 +1,18 @@
+{
+  "name": "Virtual AI Assistant",
+  "short_name": "VAI Assistant",
+  "description": "Install Virtual AI Assistant on desktop or mobile for voice and chat access.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#02023d",
+  "theme_color": "#02023d",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/assistant-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -4,11 +4,11 @@ import { IoEye } from "react-icons/io5";
 import { IoMdEyeOff } from "react-icons/io";
 import { useNavigate } from "react-router-dom";
 import { useContext } from "react";
-import { userDataContext } from "../context/userContext";
+import { userDataContext } from "../context/userDataContext";
 import axios from "axios";
 function SignUp() {
   const [showPassword, setShowPassword] = useState(false);
-  const { serverUrl, userData, setUserData } = useContext(userDataContext);
+  const { serverUrl, setUserData } = useContext(userDataContext);
   const navigate = useNavigate();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -21,7 +21,7 @@ function SignUp() {
     setLoading(true);
     try {
       let result = await axios.post(
-        `${serverUrl}/api/auth/signup`,
+        `${serverUrl}/api/auth/signUp`,
         {
           name,
           email,
@@ -33,7 +33,6 @@ function SignUp() {
       setLoading(false);
       navigate("/customize");
     } catch (error) {
-      console.log(error);
       setUserData(null);
       setLoading(false);
       setErr(error.response.data.message);

@@ -4,11 +4,11 @@ import { IoEye } from "react-icons/io5";
 import { IoMdEyeOff } from "react-icons/io";
 import { useNavigate } from "react-router-dom";
 import { useContext } from "react";
-import { userDataContext } from "../context/userContext";
+import { userDataContext } from "../context/userDataContext";
 import axios from "axios";
 function SignIp() {
   const [showPassword, setShowPassword] = useState(false);
-  const { serverUrl, userData, setUserData } = useContext(userDataContext);
+  const { serverUrl, setUserData } = useContext(userDataContext);
   const navigate = useNavigate();
 
   const [email, setEmail] = useState("");
@@ -32,7 +32,6 @@ function SignIp() {
       setLoading(false);
       navigate("/");
     } catch (error) {
-      console.log(error);
       setUserData(null);
       setLoading(false);
       setErr(error.response.data.message);

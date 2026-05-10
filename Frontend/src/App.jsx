@@ -3,12 +3,12 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import SignUp from "./Pages/SignUp";
 import SignIn from "./Pages/SignIn";
 import Customize from "./Pages/Customize";
-import { userDataContext } from "./context/userContext.jsx";
+import { userDataContext } from "./context/userDataContext";
 import Home from "./Pages/Home";
 import Customize2 from "./Pages/Customize2";
 
 function App() {
-  const { userData, setUserData } = useContext(userDataContext);
+  const { userData } = useContext(userDataContext);
   return (
     <Routes>
       <Route
@@ -27,7 +27,7 @@ function App() {
       />
       <Route
         path="/signin"
-        element={!userData ? <SignIn /> : <Navigate ti={"/"} />}
+        element={!userData ? <SignIn /> : <Navigate to={"/"} />}
       />
       <Route
         path="/customize"
