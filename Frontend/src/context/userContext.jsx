@@ -6,7 +6,7 @@ import { userDataContext as UserDataContext } from "./userDataContext";
 const MODEL_STORAGE_KEY = "virtual-ai-selected-model";
 
 function UserContext({ children }) {
-  const serverUrl = "https://virtual-ai-assistant-backend-8qjt.onrender.com";
+  const serverUrl = import.meta.env.VITE_SERVER_URL || "http://localhost:8000";
   const [userData, setUserData] = useState(null);
   const [frontendImage, setFrontendImage] = useState(null);
   const [backendImage, setBackendImage] = useState(null);

@@ -43,9 +43,11 @@ import { startTelegramBot } from "./telegramBot.js";
 
 const app = express();
 
+const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+
 app.use(
   cors({
-    origin: "https://virtual-ai-assistant-frontend-u8yj.onrender.com",
+    origin: [frontendUrl],
     credentials: true,
   })
 );
@@ -61,10 +63,6 @@ connectDb();
 const port = process.env.PORT || 5000;
 
 app.listen(port, () => {
-<<<<<<< HEAD
-  connectDb();
   startTelegramBot();
-=======
->>>>>>> a7f86a05e6269c81aa63a65dc186069c50e8f632
   console.log("Server started");
 });
