@@ -23,10 +23,6 @@ import mongoose from "mongoose";
 
 const connectDb = async () => {
   try {
-<<<<<<< HEAD
-=======
-    // Simple, modern connection (no deprecated options)
->>>>>>> a7f86a05e6269c81aa63a65dc186069c50e8f632
     await mongoose.connect(process.env.MONGODB_URL);
     console.log("db connected");
   } catch (err) {

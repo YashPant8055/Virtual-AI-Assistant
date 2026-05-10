@@ -30,13 +30,8 @@ export const signUp = async (req, res) => {
     res.cookie("token", token, {
       httpOnly: true,
       maxAge: 15 * 24 * 60 * 60 * 1000,
-<<<<<<< HEAD
-      sameSite: "strict",
-      secure: false,
-=======
       sameSite: "None",
-      secure: true, // keep as-is for localhost
->>>>>>> a7f86a05e6269c81aa63a65dc186069c50e8f632
+      secure: true,
     });
 
     const safeUser = {
@@ -70,13 +65,8 @@ export const login = async (req, res) => {
     res.cookie("token", token, {
       httpOnly: true,
       maxAge: 15 * 24 * 60 * 60 * 1000,
-<<<<<<< HEAD
-      sameSite: "strict",
-      secure: false,
-=======
       sameSite: "None",
-      secure: true, // keep as-is for localhost
->>>>>>> a7f86a05e6269c81aa63a65dc186069c50e8f632
+      secure: true,
     });
 
     const safeUser = {
