@@ -48,6 +48,7 @@ function Home() {
   const [listening, setListening] = useState(false);
   const [speaking, setSpeaking] = useState(false);
   const [voiceThinking, setVoiceThinking] = useState(false);
+  const [voiceStartHint, setVoiceStartHint] = useState("");
   const [userText, setUserText] = useState("");
   const [aiText, setAiText] = useState("");
   const [chatInput, setChatInput] = useState("");
@@ -79,7 +80,6 @@ function Home() {
   const [recordingVoiceNote, setRecordingVoiceNote] = useState(false);
   const recognitionRef = useRef(null);
   const threadMenuRef = useRef(null);
-  const modelDropdownRef = useRef(null);
   const fileInputRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const recordedChunksRef = useRef([]);
@@ -143,18 +143,24 @@ function Home() {
     if (
       !assistantEnabled ||
       !isVoiceMode ||
-      !recognitionRef.current ||
       isSpeakingRef.current ||
       isRecognizingRef.current
     ) {
       return;
     }
 
+    if (!recognitionRef.current) {
+      setVoiceStartHint("Speech recognition is not available in this browser.");
+      return;
+    }
+
     try {
+      setVoiceStartHint("");
       recognitionRef.current.start();
     } catch (error) {
       if (error.name !== "InvalidStateError") {
         console.error("Speech recognition start failed:", error);
+        setVoiceStartHint("Tap Start listening and allow microphone access.");
       }
     }
   }, [assistantEnabled, isVoiceMode]);
@@ -163,17 +169,23 @@ function Home() {
     if (
       !assistantEnabled ||
       !isVoiceMode ||
-      !recognitionRef.current ||
       isRecognizingRef.current
     ) {
       return;
     }
 
+    if (!recognitionRef.current) {
+      setVoiceStartHint("Speech recognition is not available in this browser.");
+      return;
+    }
+
     try {
+      setVoiceStartHint("");
       recognitionRef.current.start();
     } catch (error) {
       if (error.name !== "InvalidStateError") {
         console.error("Interrupt recognition start failed:", error);
+        setVoiceStartHint("Tap Start listening and allow microphone access.");
       }
     }
   }, [assistantEnabled, isVoiceMode]);
@@ -828,7 +840,10 @@ function Home() {
       window.SpeechRecognition || window.webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-      setAiText("Speech recognition is not supported in this browser.");
+      const unsupportedMessage =
+        "Speech recognition is not supported in this browser. Please use Chrome or Edge.";
+      setAiText(unsupportedMessage);
+      setVoiceStartHint(unsupportedMessage);
       return undefined;
     }
 
@@ -845,6 +860,7 @@ function Home() {
       isRecognizingRef.current = true;
       setListening(!isSpeakingRef.current);
       setVoiceThinking(false);
+      setVoiceStartHint("");
     };
 
     recognition.onend = () => {
@@ -863,6 +879,17 @@ function Home() {
       if (!isSpeakingRef.current) {
         setListening(false);
       }
+
+      if (event.error === "not-allowed" || event.error === "service-not-allowed") {
+        setVoiceStartHint(
+          "Microphone access is blocked. Allow microphone permission, then tap Start listening."
+        );
+      } else if (event.error === "network") {
+        setVoiceStartHint(
+          "Speech recognition could not reach the browser speech service. Check the deployed site connection."
+        );
+      }
+
       if (
         isMounted &&
         assistantEnabled &&
@@ -1081,8 +1108,9 @@ function Home() {
           Chat Mode
         </button>
       </div>
-      <div className="relative" ref={modelDropdownRef}>
+      <div className="relative" data-model-dropdown="true">
         <button
+          type="button"
           onClick={() => setModelDropdownOpen((v) => !v)}
           className="flex items-center gap-[6px] h-[34px] rounded-full border border-white/12 bg-white/6 backdrop-blur-xl px-[10px] text-[11px] text-white/80 outline-none cursor-pointer hover:bg-white/10 hover:text-white transition-all whitespace-nowrap"
           title="Select AI model"
@@ -1090,7 +1118,9 @@ function Home() {
           <svg className="w-[12px] h-[12px] text-cyan-300/70 shrink-0" fill="currentColor" viewBox="0 0 24 24">
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
           </svg>
-          <span className="max-w-[90px] truncate">{AVAILABLE_MODELS.find((m) => m.id === selectedModel)?.name || "Model"}</span>
+          <span className="max-w-[90px] truncate">
+            {AVAILABLE_MODELS.find((m) => m.id === selectedModel)?.name || "Model"}
+          </span>
           <svg className={`w-[10px] h-[10px] text-white/50 shrink-0 transition-transform ${modelDropdownOpen ? "rotate-180" : ""}`} fill="currentColor" viewBox="0 0 24 24">
             <path d="M7 10l5 5 5-5z"/>
           </svg>
@@ -1099,6 +1129,7 @@ function Home() {
           <div className="absolute right-0 top-[40px] w-[200px] rounded-[16px] border border-white/12 bg-[linear-gradient(180deg,rgba(17,24,39,0.98),rgba(10,16,30,0.98))] backdrop-blur-2xl shadow-[0_24px_70px_rgba(0,0,0,0.45)] p-[6px] z-50 flex flex-col gap-[2px]">
             {AVAILABLE_MODELS.map((m) => (
               <button
+                type="button"
                 key={m.id}
                 onClick={() => { changeModel(m.id); setModelDropdownOpen(false); }}
                 className={`w-full text-left px-[10px] py-[8px] rounded-[10px] text-[12px] transition-all ${
@@ -1436,10 +1467,7 @@ function Home() {
       ) {
         setThreadMenuOpen(null);
       }
-      if (
-        modelDropdownRef.current &&
-        !modelDropdownRef.current.contains(event.target)
-      ) {
+      if (!event.target.closest?.("[data-model-dropdown='true']")) {
         setModelDropdownOpen(false);
       }
     };
@@ -1923,6 +1951,27 @@ function Home() {
                             : "Stopped"}
                         </span>
                       </div>
+                      {assistantEnabled &&
+                        isVoiceMode &&
+                        voiceVisualState === "idle" && (
+                          <button
+                            type="button"
+                            className="inline-flex items-center gap-[8px] rounded-full border border-cyan-200/24 bg-cyan-300/12 px-[13px] py-[8px] text-[13px] font-medium text-cyan-50 transition-all hover:bg-cyan-300/18"
+                            onClick={() => {
+                              setAiText(`${assistantWakeName} is listening.`);
+                              startRecognition();
+                            }}
+                            title="Start listening"
+                          >
+                            <IoMicOutline className="h-[16px] w-[16px]" />
+                            Start listening
+                          </button>
+                        )}
+                      {voiceStartHint && (
+                        <p className="max-w-[300px] text-center text-[12px] leading-[1.5] text-amber-100/82">
+                          {voiceStartHint}
+                        </p>
+                      )}
                     </div>
                     </div>
 

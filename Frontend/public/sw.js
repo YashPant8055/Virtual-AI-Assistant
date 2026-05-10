@@ -1,5 +1,13 @@
-const CACHE_NAME = "virtual-ai-assistant-v2";
+const CACHE_NAME = "virtual-ai-assistant-v3";
 const APP_SHELL = ["/", "/manifest.webmanifest", "/assistant-icon.svg"];
+const SAME_ORIGIN_CACHE_DESTINATIONS = new Set([
+  "document",
+  "font",
+  "image",
+  "manifest",
+  "script",
+  "style",
+]);
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -26,6 +34,14 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
+  const requestUrl = new URL(event.request.url);
+  if (
+    requestUrl.origin !== self.location.origin ||
+    requestUrl.pathname.startsWith("/api/")
+  ) {
+    return;
+  }
+
   if (event.request.mode === "navigate") {
     event.respondWith(
       fetch(event.request).catch(() => caches.match("/") || Response.error())
@@ -33,21 +49,19 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        return cachedResponse;
-      }
+  if (!SAME_ORIGIN_CACHE_DESTINATIONS.has(event.request.destination)) {
+    return;
+  }
 
-      return fetch(event.request)
-        .then((networkResponse) => {
-          const responseClone = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseClone);
-          });
-          return networkResponse;
-        })
-        .catch(() => caches.match("/"));
-    })
+  event.respondWith(
+    fetch(event.request)
+      .then((networkResponse) => {
+        const responseClone = networkResponse.clone();
+        caches.open(CACHE_NAME).then((cache) => {
+          cache.put(event.request, responseClone);
+        });
+        return networkResponse;
+      })
+      .catch(() => caches.match(event.request) || caches.match("/"))
   );
 });

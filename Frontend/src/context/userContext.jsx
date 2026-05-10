@@ -4,6 +4,12 @@ import { AVAILABLE_MODELS } from "./modelOptions";
 import { userDataContext as UserDataContext } from "./userDataContext";
 
 const MODEL_STORAGE_KEY = "virtual-ai-selected-model";
+const DEFAULT_MODEL_ID = "openrouter/free";
+
+const normalizeModelId = (modelId) => {
+  const modelExists = AVAILABLE_MODELS.some((model) => model.id === modelId);
+  return modelExists ? modelId : DEFAULT_MODEL_ID;
+};
 
 function UserContext({ children }) {
   const serverUrl = import.meta.env.VITE_SERVER_URL || "http://localhost:8000";
@@ -12,19 +18,22 @@ function UserContext({ children }) {
   const [backendImage, setBackendImage] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
   const [selectedModel, setSelectedModel] = useState(() => {
-    return localStorage.getItem(MODEL_STORAGE_KEY) || "openrouter/free";
+    return normalizeModelId(localStorage.getItem(MODEL_STORAGE_KEY));
   });
 
-  const handleCurrentUser = async () => {
+  const handleCurrentUser = useCallback(async () => {
     try {
       const result = await axios.get(`${serverUrl}/api/user/current`, {
         withCredentials: true,
       });
+      const savedModel = normalizeModelId(result.data?.selectedModel);
+      setSelectedModel(savedModel);
+      localStorage.setItem(MODEL_STORAGE_KEY, savedModel);
       setUserData(result.data);
     } catch {
       setUserData(null);
     }
-  };
+  }, [serverUrl]);
 
   const getGeminiResponse = async (
     command,
@@ -41,16 +50,27 @@ function UserContext({ children }) {
   };
 
   const changeModel = useCallback(async (modelId) => {
-    setSelectedModel(modelId);
-    localStorage.setItem(MODEL_STORAGE_KEY, modelId);
+    const nextModel = normalizeModelId(modelId);
+    setSelectedModel(nextModel);
+    localStorage.setItem(MODEL_STORAGE_KEY, nextModel);
+    setUserData((current) =>
+      current ? { ...current, selectedModel: nextModel } : current
+    );
+
     try {
-      await axios.post(
+      const result = await axios.post(
         `${serverUrl}/api/user/model`,
-        { model: modelId },
+        { model: nextModel },
         { withCredentials: true }
       );
+      const savedModel = normalizeModelId(result.data?.selectedModel);
+      setSelectedModel(savedModel);
+      localStorage.setItem(MODEL_STORAGE_KEY, savedModel);
+      setUserData((current) =>
+        current ? { ...current, selectedModel: savedModel } : current
+      );
     } catch {
-      // silently fail
+      console.warn("Model preference could not be saved to the server.");
     }
   }, [serverUrl]);
 
@@ -104,7 +124,7 @@ function UserContext({ children }) {
 
   useEffect(() => {
     handleCurrentUser();
-  }, []);
+  }, [handleCurrentUser]);
 
   const value = {
     serverUrl,

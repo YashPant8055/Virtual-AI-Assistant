@@ -1,4 +1,5 @@
 import uploadOnCloudinary from "../Config/cloudinary.js";
+import { AVAILABLE_MODELS } from "../gemini.js";
 import User from "../Models/user.model.js";
 import { resolveAssistantReply } from "../Services/assistant.service.js";
 import { randomBytes } from "crypto";
@@ -23,6 +24,11 @@ const getConversationCollectionKey = (mode) => {
   }
 
   return getConversationKey(mode);
+};
+const DEFAULT_MODEL_ID = "openrouter/free";
+const normalizeModelId = (modelId) => {
+  const modelExists = AVAILABLE_MODELS.some((model) => model.id === modelId);
+  return modelExists ? modelId : DEFAULT_MODEL_ID;
 };
 
 const buildTelegramBotLink = (code) => {
@@ -261,7 +267,7 @@ export const askToAssistant = async (req, res) => {
   const requestId = Date.now().toString(36);
 
   try {
-    const { command, mode = "voice", conversationId, model = "openrouter/free" } = req.body;
+    const { command, mode = "voice", conversationId, model } = req.body;
     const historyKey = getHistoryKey(mode);
     const conversationKey = getConversationKey(mode);
 
@@ -320,12 +326,14 @@ export const askToAssistant = async (req, res) => {
 
     const userName = user.name || "User";
     const assistantName = user.assistantName || "Assistant";
+    const selectedModel = normalizeModelId(model || user.selectedModel);
 
     logAssistantEvent(requestId, "prompt_context", {
       userName,
       assistantName,
       historyItems: conversationHistory.length,
       sharedHistoryItems: sharedHistory.length,
+      selectedModel,
     });
 
     const responsePayload = await resolveAssistantReply({
@@ -336,7 +344,7 @@ export const askToAssistant = async (req, res) => {
       sharedHistory,
       channel: mode === "voice" ? "voice" : "chat",
       userId: user._id?.toString?.() || req.userId,
-      model,
+      model: selectedModel,
     });
 
     const storedConversation = user[conversationKey].find(
@@ -381,15 +389,21 @@ export const askToAssistant = async (req, res) => {
 export const updateModel = async (req, res) => {
   try {
     const { model } = req.body;
-    if (!model) {
-      return res.status(400).json({ message: "model is required" });
+    const selectedModel = normalizeModelId(model);
+
+    if (!model || selectedModel !== model) {
+      return res.status(400).json({ message: "valid model is required" });
     }
 
     const user = await User.findByIdAndUpdate(
       req.userId,
-      { selectedModel: model },
+      { selectedModel },
       { new: true }
     ).select("-password");
+
+    if (!user) {
+      return res.status(404).json({ message: "user not found" });
+    }
 
     return res.status(200).json({ selectedModel: user.selectedModel });
   } catch (error) {
